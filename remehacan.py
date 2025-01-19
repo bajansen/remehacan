@@ -1,0 +1,157 @@
+"""RemehaCAN implementation"""
+
+import can
+
+from const import (
+	STATUSDICT,
+	SUBSTATUSDICT
+)
+
+class RemehaCAN:
+	"""RemehaCAN"""
+
+	def __init__(self, channel, interface):
+		"""Initialize connections"""
+		self._bus = can.Bus(channel=channel, interface=interface)
+		self._linecount_413f50 = 0
+		self._linecount_410f34 = 0
+		self._linecount_411d50 = 0
+
+	def __del__(self):
+		"""Terminate can connection"""
+		self._bus.shutdown()
+
+	def receive_msg(self):
+		return self._bus.recv()
+
+	def parse_int(self, bytevals, is_signed=True, scale=100):
+		return int.from_bytes(bytevals, byteorder='little', signed=is_signed) / scale
+
+	def parse_message(self, message):
+		match message.arbitration_id:
+			case 0x282:
+				power = message.data[0]
+				flow_temp = self.parse_int(message.data[1:3])
+				return {"power": power,
+						"flow_temp": flow_temp}
+			case 0x381:
+				outside_temp = self.parse_int(message.data[:2])
+				outside_temp_avg_3min = self.parse_int(message.data[2:4])
+				outside_temp_avg_2h = self.parse_int(message.data[4:6])
+				return {"outside_temp": outside_temp,
+						"outside_temp_avg_3min": outside_temp_avg_3min,
+						"outside_temp_avg_2h": outside_temp_avg_2h}
+			case 0x382:
+				setpoint = self.parse_int(message.data[1:3])
+				return {"internal_setpoint": setpoint}
+			case 0x481:
+				statuscode = message.data[0]
+				substatuscode = message.data[1]
+				backupstatuscode = message.data[5]
+				# the least significant bit appears to indicate backup status
+				if bool(backupstatuscode & 0b1):
+					backupstatus = "ON"
+				else:
+					backupstatus = "OFF"
+				dhwval = message.data[6]
+				# only this bit appears to indicate DHW status
+				if bool(dhwval & 0b10000):
+					dhwstate = "ON"
+				else:
+					dhwstate = "OFF"
+
+				statustext = STATUSDICT[statuscode]
+				substatustext = SUBSTATUSDICT[substatuscode]
+				return {"status": statustext,
+						"substatus": substatustext,
+						"backupstatus": backupstatus,
+						"dhwstatus": dhwstate}
+			case 0x1c1:
+                # This ID contains a lot of data spanning multiple messages.
+                # They are however preceeded by some 'identifiers'.
+                # These values probably have some actual meaning, but for now
+                # We just check for these hardcoded values.
+                # The function only handles one message at a time, so we use
+                # linecount variables to keep track of where we are in what
+                # set of values.
+				retdict = None
+				if message.data[0:3].hex() == '413f50':
+					self._linecount_413f50 = 1
+					self._linecount_410f34 = 0
+					self._linecount_411d50 = 0
+					return
+				elif message.data[0:3].hex() == '410f34':
+					self._linecount_410f34 = 1
+					self._linecount_413f50 = 0
+					self._linecount_411d50 = 0
+					return
+				elif message.data[0:3].hex() == '411d50':
+					self._linecount_411d50 = 1
+					self._linecount_410f34 = 0
+					self._linecount_413f50 = 0
+					return
+				elif 0x40 <= message.data[0] <= 0x4F:
+					self._linecount_411d50 = 0
+					self._linecount_410f34 = 0
+					self._linecount_413f50 = 0
+					return
+				# elif so we only enter this section on the following message
+				elif self._linecount_413f50 >= 1:
+	
+					if self._linecount_413f50 == 1:
+						pressure = message.data[5] /10
+						am040 = self.parse_int(message.data[6:8])
+						retdict = {"ch_pressure": pressure,
+								"am040": am040}
+					elif self._linecount_413f50 == 3:
+						#print(message.data)
+						unknown = self.parse_int(message.data[7:8], True, 1)
+						retdict = {"unknown1": unknown}
+					
+					self._linecount_413f50 += 1
+					# terminate because no other matches are possible
+					return retdict
+
+				elif self._linecount_410f34 >= 1:	
+					if self._linecount_410f34 == 1:
+						locname = message.data.strip(b'\x00').decode()
+						retdict = {"locname": locname}
+					
+					self._linecount_410f34 += 1
+					return retdict
+
+				elif self._linecount_411d50 >= 1:
+	
+					if self._linecount_411d50 == 4:
+						refrigtemp = self.parse_int(message.data[6:8])
+						retdict = {"refrigerant_temp": refrigtemp}
+					elif self._linecount_411d50 == 5:
+						condensortemp = self.parse_int(message.data[1:3])
+						egresstemp = self.parse_int(message.data[5:7])
+						retdict = {"condensor_temp": condensortemp,
+								"egress_temp": egresstemp}
+					elif self._linecount_411d50 == 6:
+						fanrpm = self.parse_int(message.data[2:4], False, 1)
+						refrigpressure = self.parse_int(message.data[4:6], False, 10)
+						hpmodul = message.data[6]
+						compfreq = message.data[7]
+						retdict = {"heatpump_fanspeed": fanrpm,
+								"refrigerant_pressure": refrigpressure,
+								"heatpump_modulation": hpmodul,
+								"compressor_frequency": compfreq}
+					elif self._linecount_411d50 == 8:
+						am056 = self.parse_int(message.data[2:4], False)
+						#hm110 = self.parse_int(message.data[4:6], False)
+						retdict = {"flow_rate": am056}
+					self._linecount_411d50 += 1
+					return retdict
+
+if __name__=="__main__":
+	remeha = RemehaCAN
+
+	try:
+		while True:
+			print(remeha.parse_message(remeha.receive_msg))
+	except KeyboardInterrupt:
+		pass
+
