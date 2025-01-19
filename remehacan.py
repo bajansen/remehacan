@@ -67,13 +67,13 @@ class RemehaCAN:
 						"backupstatus": backupstatus,
 						"dhwstatus": dhwstate}
 			case 0x1c1:
-                # This ID contains a lot of data spanning multiple messages.
-                # They are however preceeded by some 'identifiers'.
-                # These values probably have some actual meaning, but for now
-                # We just check for these hardcoded values.
-                # The function only handles one message at a time, so we use
-                # linecount variables to keep track of where we are in what
-                # set of values.
+				# This ID contains a lot of data spanning multiple messages.
+				# They are however preceeded by some 'identifiers'.
+				# These values probably have some actual meaning, but for now
+				# We just check for these hardcoded values.
+				# The function only handles one message at a time, so we use
+				# linecount variables to keep track of where we are in what
+				# set of values.
 				retdict = None
 				if message.data[0:3].hex() == '413f50':
 					self._linecount_413f50 = 1
