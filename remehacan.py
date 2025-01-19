@@ -21,7 +21,7 @@ class RemehaCAN:
 		"""Terminate can connection"""
 		self._bus.shutdown()
 
-	def receive_msg(self):
+	def receive_message(self):
 		return self._bus.recv()
 
 	def parse_int(self, bytevals, is_signed=True, scale=100):
@@ -151,7 +151,7 @@ if __name__=="__main__":
 
 	try:
 		while True:
-			print(remeha.parse_message(remeha.receive_msg))
+			print(remeha.parse_message(remeha.receive_message()))
 	except KeyboardInterrupt:
 		pass
 

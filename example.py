@@ -16,7 +16,7 @@ if __name__=="__main__":
 
 	try:
 		while True:
-			data = remeha.parse_message((remeha.receive_msg()))
+			data = remeha.parse_message((remeha.receive_message()))
 			if data != None:
 				for datakey in data.keys():
 					mqtt.publish(f"{MQTT_TOPIC_BASE}/{datakey}", data[datakey])
