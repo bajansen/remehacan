@@ -110,6 +110,21 @@ class RemehaCAN:
 					elif message.data[0:3].hex() == '430c53':
 						burnhours = self.parse_int(message.data[4:6], is_signed=False, scale=1)
 						return {"burner_hours": burnhours}
+					elif message.data[0:4].hex() == '432f5101':
+						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"consumed_energy_total": consenergy}
+					elif message.data[0:4].hex() == '432f5102':
+						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"consumed_energy_backup_total": consenergy}
+					elif message.data[0:4].hex() == '432c5101':
+						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"consumed_energy_ch": consenergy}
+					elif message.data[0:4].hex() == '432c5102':
+						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"consumed_energy_backup_ch": consenergy}
+					elif message.data[0:4].hex() == '432d5102':
+						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"consumed_energy_backup_dhw": consenergy}
 					elif message.data[0:3].hex() == '438550':
 						energy_ch = self.parse_int(message.data[4:6], is_signed=False, scale=1)
 						return {"delivered_energy_heating": energy_ch}
