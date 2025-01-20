@@ -125,6 +125,9 @@ class RemehaCAN:
 					elif message.data[0:4].hex() == '432d5102':
 						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
 						return {"consumed_energy_backup_dhw": consenergy}
+					elif message.data[0:4].hex() == '432e5101':
+						consenergy = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"consumed_energy_cooling": consenergy}
 					elif message.data[0:3].hex() == '438550':
 						energy_ch = self.parse_int(message.data[4:6], is_signed=False, scale=1)
 						return {"delivered_energy_heating": energy_ch}
