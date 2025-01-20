@@ -53,6 +53,10 @@ class RemehaCAN:
 					backupstatus = "ON"
 				else:
 					backupstatus = "OFF"
+				if bool(backupstatuscode & 0b10):
+					compressorstatus = "ON"
+				else:
+					compressorstatus = "OFF"
 				dhwval = message.data[6]
 				# only this bit appears to indicate DHW status
 				if bool(dhwval & 0b10000):
@@ -65,7 +69,8 @@ class RemehaCAN:
 				return {"status": statustext,
 						"substatus": substatustext,
 						"backupstatus": backupstatus,
-						"dhwstatus": dhwstate}
+						"dhwstatus": dhwstate,
+						"compressorstatus": compressorstatus}
 			case 0x1c1:
 				# This ID contains a lot of data spanning multiple messages.
 				# They are however preceeded by some 'identifiers'.
