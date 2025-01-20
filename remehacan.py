@@ -90,11 +90,59 @@ class RemehaCAN:
 					self._linecount_410f34 = 0
 					self._linecount_413f50 = 0
 					return
+				# reset linecount on unknown or single-line objects
 				elif 0x40 <= message.data[0] <= 0x4F:
 					self._linecount_411d50 = 0
 					self._linecount_410f34 = 0
 					self._linecount_413f50 = 0
-					return
+					# There are also some oneline values
+					if message.data[0:3].hex() == '430050':
+						ongridhours = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"on_grid_hours": ongridhours}
+					elif message.data[0:3].hex() == '430b53':
+						numstarts = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"total_starts": numstarts}
+					elif message.data[0:3].hex() == '430c53':
+						burnhours = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"burner_hours": burnhours}
+					elif message.data[0:3].hex() == '438550':
+						energy_ch = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"delivered_energy_heating": energy_ch}
+					elif message.data[0:3].hex() == '438650':
+						energy_dhw = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"delivered_energy_dhw": energy_dhw}
+					elif message.data[0:3].hex() == '438750':
+						energy_cooling = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"delivered_energy_cooling": energy_cooling}
+					elif message.data[0:3].hex() == '438950':
+						energy_total = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"delivered_energy_total": energy_total}
+					elif message.data[0:3].hex() == '43ad50':
+						pumphours = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"pump_hours": pumphours}
+					elif message.data[0:3].hex() == '43ae50':
+						pumpstarts = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"pump_starts": pumpstarts}
+					elif message.data[0:3].hex() == '43af50':
+						backuphours = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"backup_hours": backuphours}
+					elif message.data[0:3].hex() == '43b150':
+						backupstarts = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"backup_starts": backupstarts}
+					elif message.data[0:3].hex() == '43c143':
+						defrostduration = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"defrost_duration": defrostduration}
+					elif message.data[0:3].hex() == '43c243':
+						defrostcycles = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"defrost_cycles": defrostcycles}
+					elif message.data[0:3].hex() == '4ba230':
+						param_edits = self.parse_int(message.data[4:6], is_signed=False, scale=1)
+						return {"num_parameter_edits": param_edits}
+					elif message.data[0:3].hex() == '4f8a50':
+						avgspf = self.parse_int(message.data[4:6], is_signed=False, scale=10)
+						return {"avg_spf": avgspf}
+					else:
+						return
 				# elif so we only enter this section on the following message
 				elif self._linecount_413f50 >= 1:
 	
