@@ -193,7 +193,12 @@ class RemehaCAN:
 
 				elif self._linecount_411d50 >= 1:
 	
-					if self._linecount_411d50 == 4:
+					if self._linecount_411d50 == 2:
+						returntemp = self.parse_int(message.data[2:4])
+						avgreturntemp = self.parse_int(message.data[4:6])
+						retdict = {"HM001": returntemp,
+								"HM020": avgreturntemp}
+					elif self._linecount_411d50 == 4:
 						refrigtemp = self.parse_int(message.data[6:8])
 						retdict = {"refrigerant_temp": refrigtemp}
 					elif self._linecount_411d50 == 5:
