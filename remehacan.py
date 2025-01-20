@@ -158,6 +158,12 @@ class RemehaCAN:
 					elif message.data[0:3].hex() == '43c243':
 						defrostcycles = self.parse_int(message.data[4:6], is_signed=False, scale=1)
 						return {"defrost_cycles": defrostcycles}
+					elif message.data[0:3].hex() == '4b0454':
+						roomtemp = self.parse_int(message.data[4:6], scale=10)
+						return {"room_temp": roomtemp}
+					elif message.data[0:3].hex() == '4b1954':
+						roomsetpoint = self.parse_int(message.data[4:6], scale=10)
+						return {"room_setpoint": roomsetpoint}
 					elif message.data[0:3].hex() == '4ba230':
 						param_edits = self.parse_int(message.data[4:6], is_signed=False, scale=1)
 						return {"num_parameter_edits": param_edits}
