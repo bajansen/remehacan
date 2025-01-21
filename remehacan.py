@@ -4,28 +4,37 @@ import can
 
 from const import (
 	STATUSDICT,
-	SUBSTATUSDICT
+	SUBSTATUSDICT,
+	TXDATA
 )
 
 class RemehaCAN:
 	"""RemehaCAN"""
 
-	def __init__(self, channel, interface):
+	def __init__(self, channel, interface, can_transmit=False):
 		"""Initialize connections"""
 		self._bus = can.Bus(channel=channel, interface=interface)
 		self._linecount_413f50 = 0
 		self._linecount_410f34 = 0
 		self._linecount_411d50 = 0
+		self._data_requester = self._setup_data_requester(autostart=can_transmit)
 
 	def __del__(self):
 		"""Terminate can connection"""
+		self._data_requester.stop()
 		self._bus.shutdown()
 
-	def receive_message(self):
-		return self._bus.recv()
+	def _setup_data_requester(self, autostart=False):
+		msg_list = []
+		for msg in TXDATA:
+			msg_list.append(can.Message(arbitration_id=0x241, data=msg, is_extended_id=False))
+		return self._bus.send_periodic(msgs=msg_list, period=1, autostart=True)
 
 	def parse_int(self, bytevals, is_signed=True, scale=100):
 		return int.from_bytes(bytevals, byteorder='little', signed=is_signed) / scale
+
+	def receive_message(self):
+		return self._bus.recv()
 
 	def parse_message(self, message):
 		match message.arbitration_id:

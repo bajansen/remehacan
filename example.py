@@ -9,7 +9,7 @@ from config import (
 )
 
 if __name__=="__main__":
-	remeha = RemehaCAN(CAN_CHANNEL, CAN_INTERFACE)
+	remeha = RemehaCAN(channel=CAN_CHANNEL, interface=CAN_INTERFACE, can_transmit=False)
 
 	mqtt = paho.Client("remeha2mqtt")
 	mqtt.connect(MQTT_SERVER)
