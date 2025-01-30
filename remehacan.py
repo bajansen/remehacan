@@ -208,6 +208,12 @@ class RemehaCAN:
 					elif message.data[0:3].hex() == '4b1954':
 						roomsetpoint = self._parse_int(message.data[4:6], scale=10)
 						self.datadict["room_setpoint"] = roomsetpoint
+					elif message.data[0:3].hex() == '4b7943':
+						heatpump_voltage = self._parse_int(message.data[4:6], scale=1)
+						self.datadict["heatpump_voltage"] = heatpump_voltage
+					elif message.data[0:3].hex() == '4b8043':
+						inverter_temp = self._parse_int(message.data[4:6])
+						self.datadict["inverter_temp"] = inverter_temp
 					elif message.data[0:3].hex() == '4ba230':
 						param_edits = self._parse_int(message.data[4:6], is_signed=False, scale=1)
 						self.datadict["num_parameter_edits"] = param_edits
@@ -283,13 +289,18 @@ class RemehaCAN:
 							self.datadict["refrigerant_pressure"] = refrigpressure
 							self.datadict["heatpump_modulation"] = hpmodul
 							self.datadict["compressor_frequency"] = compfreq
+						elif self._linecount_411d50 == 7:
+							# Store first byte of HM062
+							self._carrybyte = message.data[7:8]
 						elif self._linecount_411d50 == 8:
+							compcurr = self._parse_int(self._carrybyte + message.data[1:2], False, 10)
 							# flow rate
 							am056 = self._parse_int(message.data[2:4], False)
 							# flow outdoor unit
 							#hm110 = self._parse_int(message.data[4:6], False)
 							# store first byte of COP
 							self._carrybyte = message.data[7:8]
+							self.datadict["compressor_current"] = compcurr
 							self.datadict["flow_rate"] = am056
 						elif self._linecount_411d50 == 9:
 							calculated_cop = self._parse_int(self._carrybyte + message.data[1:2], False, 1000)
@@ -297,6 +308,9 @@ class RemehaCAN:
 							#hm110 = self._parse_int(message.data[4:6], False)
 							self.datadict["cop"] = calculated_cop
 							self.datadict["cop_threshold"] = cop_threshold
+						elif self._linecount_411d50 == 14:
+							airtemp = self._parse_int(message.data[2:4])
+							self.datadict["air_temp"] = airtemp
 						self._linecount_411d50 += 1
 						return
 
